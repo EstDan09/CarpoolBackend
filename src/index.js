@@ -4,8 +4,6 @@ const connectDB = require("./config/db");
 const compression = require("compression");
 const path = require("path");
 
-
-
 // Configurar variables de entorno
 dotenv.config();
 const port = process.env.PORT || 3000;
