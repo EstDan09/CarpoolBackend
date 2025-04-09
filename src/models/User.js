@@ -38,7 +38,7 @@ const UserSchema = mongoose.Schema(
     },
     genre: {
       type: String,
-      enum: ["male", "female", "other"], // o los valores que uses
+      enum: ["male", "female", "other"],
       required: false,
     },
     photoKey: {

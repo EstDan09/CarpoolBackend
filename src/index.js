@@ -56,7 +56,7 @@ connectDB().then(() => {
     });
   
     // Definir las rutas
-    //require("./routes/user")(app); ejemplo cuando hagamos rutas
+    require("./routes/place")(app);
 
   
     // Error-handling middleware
