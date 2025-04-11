@@ -26,6 +26,8 @@ connectDB().then(() => {
         etag: false,
       })
     );
+
+    app.use(express.json());
   
     app.set('trust proxy', 1);
   
@@ -57,6 +59,7 @@ connectDB().then(() => {
   
     // Definir las rutas
     require("./routes/place")(app);
+    require("./routes/user")(app);
 
   
     // Error-handling middleware
