@@ -12,6 +12,9 @@ const app = express();
 connectDB().then(() => {
     // Habilitar compresión para mejorar el rendimiento
     app.use(compression());
+
+    // Habilitar parser de json para el request body
+    app.use(express.json())
   
     // Cache headers para respuestas dinámicas
     app.use((req, res, next) => {
