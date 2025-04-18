@@ -73,3 +73,51 @@ exports.getParameterById = async (req, res) => {
   }
 };
 
+exports.updateParameter = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { parameterName, parameterList } = req.body;
+
+    if (!parameterName || !parameterList || !parameterList.length) {
+      return res.status(400).json({ msg: "Todos los campos son requeridos para actualizar." });
+    }
+
+    const updatedParameter = await Parameter.findByIdAndUpdate(
+      id,
+      { parameterName, parameterList },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedParameter) {
+      return res.status(404).json({ msg: "Parametro no encontrado para actualizar." });
+    }
+
+    res.status(200).json({ msg: "Parametro actualizado exitosamente.", data: updatedParameter });
+  } catch (error) {
+    console.error("Error al actualizar el parametro:", error);
+    if (error.code === 11000) {
+      res.status(400).json({ msg: "Ya existe un parametro con ese nombre." });
+    } else {
+      res.status(500).json({ msg: "Error al actualizar el parametro." });
+    }
+  }
+};
+
+exports.deleteParameter = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const deletedParameter = await Parameter.findByIdAndDelete(id);
+
+    if (!deletedParameter) {
+      return res.status(404).json({ msg: "Parametro no encontrado para eliminar." });
+    }
+
+    res.status(200).json({ msg: "Parametro eliminado exitosamente.", data: deletedParameter });
+  } catch (error) {
+    console.error("Error al eliminar el parametro:", error);
+    res.status(500).json({ msg: "Error al eliminar el parametro." });
+  }
+};
+
+

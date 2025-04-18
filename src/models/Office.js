@@ -17,4 +17,4 @@ const OfficeSchema = mongoose.Schema(
     }
 );
 
-module.exports = mongoose.module("Office", OfficeSchema);
+module.exports = mongoose.model("Office", OfficeSchema);

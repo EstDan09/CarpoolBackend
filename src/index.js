@@ -66,6 +66,9 @@ connectDB().then(() => {
     require("./routes/trip")(app);
     require("./routes/paremeter")(app);
     require("./routes/vehicle")(app);
+    require("./routes/institution")(app);
+    require("./routes/office")(app);
+
 
   
     // Error-handling middleware
