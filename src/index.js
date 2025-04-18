@@ -12,6 +12,9 @@ const app = express();
 connectDB().then(() => {
     // Habilitar compresión para mejorar el rendimiento
     app.use(compression());
+
+    // Habilitar parser de json para el request body
+    app.use(express.json())
   
     // Cache headers para respuestas dinámicas
     app.use((req, res, next) => {
@@ -61,6 +64,8 @@ connectDB().then(() => {
     require("./routes/place")(app);
     require("./routes/user")(app);
     require("./routes/trip")(app);
+    require("./routes/paremeter")(app);
+    require("./routes/vehicle")(app);
 
   
     // Error-handling middleware
