@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const VehicleSchema = mongoose.Schema(
+const VehicleSchema = new mongoose.Schema(
   {
     model: {
       type: String,
@@ -21,6 +21,7 @@ const VehicleSchema = mongoose.Schema(
       type: String,
       required: true,
       trim: true,
+      unique: true,
     },
   },
   {

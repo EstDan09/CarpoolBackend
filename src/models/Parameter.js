@@ -1,11 +1,12 @@
 const mongoose = require("mongoose");
 
-const ParameterSchema = mongoose.Schema(
+const ParameterSchema = new mongoose.Schema(
   {
     parameterName: {
       type: String,
       required: true,
       trim: true,
+      unique: true
     },
     parameterList: { 
       type: [String],
