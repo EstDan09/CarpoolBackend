@@ -61,6 +61,7 @@ connectDB().then(() => {
     // Definir las rutas
     require("./routes/place")(app);
     require("./routes/paremeter")(app);
+    require("./routes/vehicle")(app);
 
   
     // Error-handling middleware
