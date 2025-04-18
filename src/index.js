@@ -60,6 +60,7 @@ connectDB().then(() => {
     // Definir las rutas
     require("./routes/place")(app);
     require("./routes/user")(app);
+    require("./routes/trip")(app);
 
   
     // Error-handling middleware
