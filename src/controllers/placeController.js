@@ -24,7 +24,7 @@ exports.registerPlace = async (req, res) => {
   }
 };
 
-exports.getPlaces = async (res) => {
+exports.getPlaces = async (req, res) => {
   try {
     const places = await Place.find();
     res.status(200).json({ msg: "Lugares obtenidos exitosamente.", data: places });
