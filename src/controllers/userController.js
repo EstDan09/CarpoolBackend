@@ -3,15 +3,15 @@ const User = require("../models/User");
 exports.addCars = async (req, res) => {
     try {
         const cars = req.body.cars;
-        const email = req.body.email;
-        if (!cars || !email) return res.status(400).json({msg: "Informacion incompleta"});
-        const data = User.findOneAndUpdate(
-            {email: email},
+        const emailValue = req.body.email;
+        if (!cars || !emailValue) return res.status(400).json({msg: "Informacion incompleta"});
+        const dataUser = await User.findOneAndUpdate(
+            {email: emailValue},
             {$push: {vehicles:
                 {$each:cars}
             }}
         );
-        res.status(201).json({msg: "Vehiculos agregados exitosamente", data: data});
+        res.status(201).json({msg: "Vehiculos agregados exitosamente", data: dataUser});
     } catch (error) {
         console.error("Error al actualizar agregar carros", error);
         res.status(500).json({ msg: "Error al agregar carros"});
