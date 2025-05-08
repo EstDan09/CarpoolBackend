@@ -26,7 +26,6 @@ exports.freeVsChargedTrips = async (req, res) => {
         } else {
           freeCount = result[0].free[0].amount;
         }
-        console.log(freeCount);
 
         let totalCount;
         //Si no hay viajes en total
