@@ -2,9 +2,15 @@ const Trip = require("../models/Trip");
 
 exports.registerTrip = async (req, res) => {
   try {
-    const { startpoint, endpoint, departure, arrival, stops, passengers, driver } = req.body;
+    const { startpoint, endpoint, departure, arrival, stops, passengers, driver, costPerPerson } = req.body;
 
-    if (!startpoint || !endpoint || !departure || !arrival || !driver) {
+    console.log(startpoint);
+    console.log(endpoint);
+    console.log(departure);
+    console.log(arrival);
+    console.log(driver);
+    console.log(costPerPerson);
+    if (!startpoint || !endpoint || !departure || !arrival || !driver || costPerPerson == undefined) {
       return res.status(400).json({ msg: "Campos obligatorios faltantes." });
     }
 
@@ -15,7 +21,8 @@ exports.registerTrip = async (req, res) => {
       arrival,
       stops: stops || [],
       passengers: passengers || [],
-      driver
+      driver,
+      costPerPerson
     });
 
     await newTrip.save();

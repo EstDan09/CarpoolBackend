@@ -45,6 +45,10 @@ const TripSchema = mongoose.Schema(
             ref: "User",
             required: true,
         },
+        costPerPerson: {
+            type: Number,
+            required: true
+        },
     },
     {
         timestamps: true,

@@ -5,6 +5,12 @@ exports.addCars = async (req, res) => {
         const cars = req.body.cars;
         const emailValue = req.body.email;
         if (!cars || !emailValue) return res.status(400).json({msg: "Informacion incompleta"});
+
+        const user = await User.findOne({email: emailValue});
+        if (!user) {return res.status(409).json({msg: "No existe la cuenta"})};
+        if (user.role != "driver") {return res.status(409).json({msg: "No se puede agregar carro a usuario no conductor"})};
+
+
         const dataUser = await User.findOneAndUpdate(
             {email: emailValue},
             {$push: {vehicles:
@@ -36,13 +42,13 @@ exports.update = async (req, res) => {
 
 exports.login = async (req, res) => {
     try {
-        const {email, password} = req.body;
+        const {autentication, password} = req.body;
 
-        if (!email || !password) {
+        if (!autentication || !password) {
             return res.status(400).json({msg: "Informacion incompleta"})
         }
 
-        const user = await User.findOne({email: email});
+        const user = await User.findOne({$or: [{email: autentication}, {username: autentication}]});
         if (!user) {return res.status(409).json({msg: "No hay una cuenta asociada al correo"})}
 
         user.comparePassword(password, function (err, match) {
@@ -63,12 +69,29 @@ exports.login = async (req, res) => {
 
 exports.register = async (req, res) => {
     try {
-        const {name, email, password, institutionId, 
+        const {firstName, secondName, firstLastname, secondLastname, username, email, password, institutionId, 
             identificationTypeId, identificationNumber, 
             birthDate, genre, photoKey, photoUrl, type, role, vehicles} = req.body;
         
         //Campos obligatorios
-        if (!name || !email || !password || !institutionId || 
+        console.log(firstName);
+        console.log(secondName);
+        console.log(firstLastname);
+        console.log(secondLastname);
+        console.log(username);
+        console.log(email);
+        console.log(password);
+        console.log(institutionId);
+        console.log(identificationTypeId);
+        console.log(identificationNumber);
+        console.log(birthDate);
+        console.log(genre);
+        console.log(photoKey);
+        console.log(photoUrl);
+        console.log(type);
+        console.log(role);
+        console.log(vehicles);
+        if (!firstName || !firstLastname || !username || !email || !password || !institutionId || 
             !identificationTypeId || !birthDate || !type || !role) {
                 return res.status(400).json({ msg: "Campos obligatorios sin llenar."});
         }
@@ -80,20 +103,25 @@ exports.register = async (req, res) => {
         }
 
         //Si llegan a haber mas datos para validar se consultan en esta query
-        const query = {$or: [{email: email}]};
+        const query = {$or: [{email: email}, {username: username}]};
         const ans = await User.find(query);
+        console.log("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
         console.log(ans);
+        console.log("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
         if (ans != null) {
             for (let i in ans) {
-                if (ans[i].email == email) { 
-                    return res.status(409).json({ msg: "Ya existe el correo"})
+                if (ans[i].email === email) { 
+                    return res.status(409).json({ msg: "Ya existe el correo"});
+                }
+                if (ans[i].username === username) {
+                    return res.status(409).json({ msg: "Ya existe el nombre de usuario"});
                 }
             }
         }
 
         const newUser = new User({
-            name, email, password, institutionId, identificationTypeId,
-            identificationNumber, birthDate, genre, photoKey, photoUrl, 
+            firstName, secondName, firstLastname, secondLastname, username, email, password, institutionId, 
+            identificationTypeId, identificationNumber, birthDate, genre, photoKey, photoUrl, 
             type, role, vehicles
         });
 
