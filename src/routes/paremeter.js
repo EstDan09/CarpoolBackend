@@ -1,4 +1,4 @@
-const parameterController = require("../controllers/parameterController");
+const parameterController = require("../controllers/paremeterController");
 
 module.exports = function (app) {
     app.post("/backend/parameter/register", parameterController.registerParameter);
