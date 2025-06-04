@@ -3,6 +3,8 @@ const dotenv = require('dotenv');
 const connectDB = require("./config/db");
 const compression = require("compression");
 const path = require("path");
+const cors = require("cors");  
+
 
 // Configurar variables de entorno
 dotenv.config();
@@ -15,6 +17,14 @@ connectDB().then(() => {
 
     // Habilitar parser de json para el request body
     app.use(express.json())
+
+    app.use(
+      cors({
+        origin: "http://localhost:3000", 
+        methods: ["GET","POST","PUT","DELETE","OPTIONS"], 
+        allowedHeaders: ["Content-Type","Authorization"]
+      })
+    );
   
     // Cache headers para respuestas dinámicas
     app.use((req, res, next) => {
