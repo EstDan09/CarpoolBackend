@@ -36,9 +36,17 @@ const TripSchema = mongoose.Schema(
         ],
         passengers: [
             {
-                type: mongoose.Schema.Types.ObjectId,
-                ref: "User",
-            },
+                user: {
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: "User",
+                    required: true,
+                },
+                status: {
+                    type: String,
+                    enum: ["pending", "accepted", "denied"],
+                    default: "pending",
+                },
+            }
         ],
         driver: {
             type: mongoose.Schema.Types.ObjectId,
