@@ -54,12 +54,12 @@ const UserSchema = mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ["admin", "user"],
+      enum: ["Administrador", "Usuario"],
       required: true,
     },
     role: {
       type: String,
-      enum: ["Chofer", "Pasajero"],
+      enum: ["Conductor", "Pasajero"],
       required: true,
     },
     vehicles: [

@@ -106,3 +106,29 @@ exports.register = async (req, res) => {
         res.status(500).json({ msg: "Error al registrar usuario"});
     }
 }
+
+exports.getUserById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (!id) return res.status(400).json({ msg: "ID no proporcionado" });
+
+        const user = await User.findById(id);
+        if (!user) return res.status(404).json({ msg: "Usuario no encontrado" });
+
+        res.status(200).json({ data: user });
+    } catch (error) {
+        console.error("Error al obtener usuario por ID", error);
+        res.status(500).json({ msg: "Error al obtener usuario por ID" });
+    }
+};
+
+exports.getAllUsers = async (req, res) => {
+    try {
+        const users = await User.find({});
+        res.status(200).json({ data: users });
+    } catch (error) {
+        console.error("Error al obtener todos los usuarios", error);
+        res.status(500).json({ msg: "Error al obtener todos los usuarios" });
+    }
+};
+

@@ -53,6 +53,11 @@ const TripSchema = mongoose.Schema(
             ref: "User",
             required: true,
         },
+        paymethod: {
+                    type: String,
+                    enum: ["Gratuito", "Sinpe", "Efectivo"],
+                    default: "Gratuito",
+                },
     },
     {
         timestamps: true,
@@ -60,3 +65,5 @@ const TripSchema = mongoose.Schema(
 );
 
 module.exports = mongoose.model("Trip", TripSchema);
+
+//metodo de pago
