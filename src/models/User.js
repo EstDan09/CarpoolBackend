@@ -54,7 +54,7 @@ const UserSchema = mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ["Administrador", "Usuario"],
+      enum: ["Administrador", "Usuario", "Inactivo - Admin", "Inactivo - User"],
       required: true,
     },
     role: {
