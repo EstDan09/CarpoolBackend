@@ -29,8 +29,8 @@ const TripSchema = mongoose.Schema(
                 },
                 status: {
                     type: String,
-                    enum: ["pending", "accepted", "denied"],
-                    default: "pending",
+                    enum: ["Pendiente", "Aprobado", "Rechazado"],
+                    default: "Pendiente",
                 },
             }
         ],
@@ -43,8 +43,8 @@ const TripSchema = mongoose.Schema(
                 },
                 status: {
                     type: String,
-                    enum: ["pending", "accepted", "denied"],
-                    default: "pending",
+                    enum: ["Pendiente", "Aprobado", "Rechazado"],
+                    default: "Pendiente",
                 },
             }
         ],

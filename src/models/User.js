@@ -41,7 +41,7 @@ const UserSchema = mongoose.Schema(
     },
     genre: {
       type: String,
-      enum: ["male", "female", "other"],
+      enum: ["Masculino", "Femenino", "Otro"],
       required: false,
     },
     photoKey: {
@@ -59,7 +59,7 @@ const UserSchema = mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["driver", "passenger"],
+      enum: ["Chofer", "Pasajero"],
       required: true,
     },
     vehicles: [
