@@ -19,20 +19,59 @@ exports.addCars = async (req, res) => {
 }
 
 exports.update = async (req, res) => {
-    try {
-        //En el body debe de estar TODA la informacion del usuario
-        const user = req.body;
+  try {
+    const { id } = req.params;          
+    const updates = req.body;
 
-        if (!user) return res.status(400).json({msg: "Informacion incompleta"});
-
-        const userUpdated = await User.replaceOne({email: user.email}, user);
-
-        res.status(201).json({msg:"Usuario actualizado", data: userUpdated});
-    } catch(error) {
-        console.error("Error al actualizar usuario", error);
-        res.status(500).json({ msg: "Error al iniciar sesion"});
+    const user = await User.findById(id);
+    if (!user) {
+      return res
+        .status(404)
+        .json({ msg: "Usuario no encontrado." });
     }
-}
+
+    if (updates.email && updates.email !== user.email) {
+      const exists = await User.findOne({ email: updates.email });
+      if (exists) {
+        return res
+          .status(409)
+          .json({ msg: "Ese email ya está en uso." });
+      }
+    }
+    if (updates.username && updates.username !== user.username) {
+      const exists = await User.findOne({ username: updates.username });
+      if (exists) {
+        return res
+          .status(409)
+          .json({ msg: "Ese username ya está en uso." });
+      }
+    }
+
+    const allowed = [
+      "name", "fisrtSurname", "secondSurname", "phone",
+      "username", "email", "password", "institutionId",
+      "identificationTypeId", "identificationNumber",
+      "birthDate", "genre", "photoKey", "photoUrl",
+      "type", "role", "vehicles"
+    ];
+    for (let key of allowed) {
+      if (updates[key] !== undefined) {
+        user[key] = updates[key];
+      }
+    }
+
+    await user.save();
+
+    res
+      .status(200)
+      .json({ msg: "Usuario actualizado exitosamente.", data: user });
+  } catch (error) {
+    console.error("Error al actualizar usuario", error);
+    res
+      .status(500)
+      .json({ msg: "Error interno al actualizar usuario." });
+  }
+};
 
 exports.login = async (req, res) => {
     try {
@@ -62,50 +101,104 @@ exports.login = async (req, res) => {
 }
 
 exports.register = async (req, res) => {
-    try {
-        const {name, email, password, institutionId, 
-            identificationTypeId, identificationNumber, 
-            birthDate, genre, photoKey, photoUrl, type, role, vehicles} = req.body;
-        
-        //Campos obligatorios
-        if (!name || !email || !password || !institutionId || 
-            !identificationTypeId || !birthDate || !type || !role) {
-                return res.status(400).json({ msg: "Campos obligatorios sin llenar."});
-        }
+  try {
+    const {
+      name,
+      fisrtSurname,
+      secondSurname,
+      phone,
+      username,
+      email,
+      password,
+      institutionId,
+      identificationTypeId,
+      identificationNumber,
+      birthDate,
+      genre,
+      photoKey,
+      photoUrl,
+      type,
+      role,
+      vehicles = []
+    } = req.body;
 
-        //Si el correo es correcto
-        const size = email.length;
-        if (!(email.slice(size-14) === "estudiantec.cr") && !(email.slice(size-10) === "itcr.ac.cr")) {
-            return res.status(400).json({ msg: "Correo electronico invalido"});
-        }
-
-        //Si llegan a haber mas datos para validar se consultan en esta query
-        const query = {$or: [{email: email}]};
-        const ans = await User.find(query);
-        console.log(ans);
-        if (ans != null) {
-            for (let i in ans) {
-                if (ans[i].email == email) { 
-                    return res.status(409).json({ msg: "Ya existe el correo"})
-                }
-            }
-        }
-
-        const newUser = new User({
-            name, email, password, institutionId, identificationTypeId,
-            identificationNumber, birthDate, genre, photoKey, photoUrl, 
-            type, role, vehicles
-        });
-
-        await newUser.save();
-
-        console.log("Usuario registrado");
-        res.status(201).json({msg: "Usuario registrado exitosamente.", data: newUser});
-    } catch (error) {
-        console.error("Error al registrar usuario", error);
-        res.status(500).json({ msg: "Error al registrar usuario"});
+    if (
+      !name ||
+      !fisrtSurname ||
+      !secondSurname ||
+      !phone ||
+      !username ||
+      !email ||
+      !password ||
+      !institutionId ||
+      !birthDate ||
+      !type ||
+      !role
+    ) {
+      return res
+        .status(400)
+        .json({ msg: "Faltan campos obligatorios." });
     }
-}
+
+    const domain = email.split("@")[1] || "";
+    if (!["estudiantec.cr","itcr.ac.cr"].includes(domain)) {
+      return res
+        .status(400)
+        .json({ msg: "Correo inválido; dominio debe ser estudiantec.cr o itcr.ac.cr" });
+    }
+
+    const conflict = await User.findOne({
+      $or: [
+        { email },
+        { username },
+        ...(identificationNumber
+          ? [{ identificationNumber }]
+          : [])
+      ]
+    });
+    if (conflict) {
+      let field = conflict.email === email
+        ? "email"
+        : conflict.username === username
+          ? "username"
+          : "identificationNumber";
+      return res
+        .status(409)
+        .json({ msg: `Ya existe un usuario con ese ${field}.` });
+    }
+
+    const newUser = new User({
+      name,
+      fisrtSurname,
+      secondSurname,
+      phone,
+      username,
+      email,
+      password,
+      institutionId,
+      identificationTypeId,
+      identificationNumber,
+      birthDate,
+      genre,
+      photoKey,
+      photoUrl,
+      type,
+      role,
+      vehicles
+    });
+
+    await newUser.save();
+
+    res
+      .status(201)
+      .json({ msg: "Usuario registrado exitosamente.", data: newUser });
+  } catch (error) {
+    console.error("Error al registrar usuario", error);
+    res
+      .status(500)
+      .json({ msg: "Error interno al registrar usuario." });
+  }
+};
 
 exports.getUserById = async (req, res) => {
     try {

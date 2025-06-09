@@ -9,6 +9,21 @@ const UserSchema = mongoose.Schema(
       required: true,
       trim: true,
     },
+    fisrtSurname: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    secondSurname: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    phone: {
+      type: String,
+      required: true,
+      trim: true,
+    },
     username: {
       type: String,
       required: true,

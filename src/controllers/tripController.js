@@ -2,19 +2,89 @@ const Trip = require("../models/Trip");
 
 exports.registerTrip = async (req, res) => {
   try {
-    const { startpoint, endpoint, departure, arrival, stops = [], passengers = [], driver } = req.body;
+    const {
+      startpoint,
+      endpoint,
+      departure,
+      arrival,
+      stops       = [],
+      passengers  = [],
+      driver,
+      paymethod,
+      costPerPerson
+    } = req.body;
 
-    if (!startpoint || !endpoint || !departure || !arrival || !driver) {
-      return res.status(400).json({ msg: "Faltan campos obligatorios." });
+    if (
+      !startpoint ||
+      !endpoint  ||
+      !departure ||
+      !arrival   ||
+      !driver    ||
+      !paymethod ||
+      costPerPerson == null
+    ) {
+      return res.status(400).json({
+        msg: `Faltan campos obligatorios. Debes enviar:
+          startpoint, endpoint, departure, arrival, driver, paymethod y costPerPerson`
+      });
     }
 
-    const trip = new Trip({ startpoint, endpoint, departure, arrival, stops, passengers, driver });
+    if (new Date(departure) >= new Date(arrival)) {
+      return res
+        .status(400)
+        .json({ msg: "La hora de salida debe ser anterior a la de llegada." });
+    }
+
+    const métodos = ["Gratuito", "Sinpe", "Efectivo"];
+    if (!métodos.includes(paymethod)) {
+      return res
+        .status(400)
+        .json({ msg: `Método de pago inválido. Debe ser uno de: ${métodos.join(", ")}` });
+    }
+    if (typeof costPerPerson !== "number" || costPerPerson < 0) {
+      return res
+        .status(400)
+        .json({ msg: "costPerPerson debe ser un número ≥ 0." });
+    }
+    const finalCost = paymethod === "Gratuito" ? 0 : costPerPerson;
+
+    for (const s of stops) {
+      if (!s.place) {
+        return res
+          .status(400)
+          .json({ msg: "Cada parada debe traer su campo place (ID)." });
+      }
+    }
+    for (const p of passengers) {
+      if (!p.user) {
+        return res
+          .status(400)
+          .json({ msg: "Cada pasajero debe traer su campo user (ID)." });
+      }
+    }
+
+    const trip = new Trip({
+      startpoint,
+      endpoint,
+      departure,
+      arrival,
+      stops,
+      passengers,
+      driver,
+      paymethod,
+      costPerPerson: finalCost
+    });
     await trip.save();
 
-    res.status(201).json({ msg: "Viaje registrado exitosamente.", data: trip });
+    return res
+      .status(201)
+      .json({ msg: "Viaje registrado exitosamente.", data: trip });
+
   } catch (error) {
     console.error("Error al registrar el viaje:", error);
-    res.status(500).json({ msg: "Error interno al registrar el viaje." });
+    return res
+      .status(500)
+      .json({ msg: "Error interno al registrar el viaje." });
   }
 };
 
