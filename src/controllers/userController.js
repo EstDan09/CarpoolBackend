@@ -132,3 +132,38 @@ exports.getAllUsers = async (req, res) => {
     }
 };
 
+exports.addNotificationToUser = async (req, res) => {
+  try {
+    const { email, title, subtitle } = req.body;
+
+    if (!email || !title || !subtitle) {
+      return res.status(400).json({ msg: "Faltan campos requeridos: email, title o subtitle" });
+    }
+
+    const updatedUser = await User.findOneAndUpdate(
+      { email },
+      {
+        $push: {
+          notifications: {
+            title,
+            subtitle,
+            timestamp: new Date()
+          }
+        }
+      },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ msg: "Usuario no encontrado" });
+    }
+
+    res.status(200).json({
+      msg: "Notificación agregada exitosamente",
+      notifications: updatedUser.notifications
+    });
+  } catch (error) {
+    console.error("Error al agregar notificación:", error);
+    res.status(500).json({ msg: "Error interno al agregar notificación" });
+  }
+};

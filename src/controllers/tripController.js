@@ -235,6 +235,81 @@ exports.getAllTripsWithPassengerCount = async (req, res) => {
   }
 };
 
+exports.getTripsByPassenger = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { status, driver } = req.query;
+
+    if (!userId) {
+      return res.status(400).json({ msg: "ID del usuario es requerido." });
+    }
+
+    let query;
+
+    if (driver === "true") {
+      query = { driver: userId };
+    } else {
+      const matchStatus = (status && status !== "all") ? status : null;
+
+      query = matchStatus
+        ? { passengers: { $elemMatch: { user: userId, status: matchStatus } } }
+        : { "passengers.user": userId };
+    }
+
+    const trips = await Trip.find(query)
+      .populate("startpoint", "name")
+      .populate("endpoint", "name")
+      .populate("driver", "name email")
+      .populate("passengers.user", "name email")
+      .populate("stops.place", "name")
+      .lean();
+
+    res.status(200).json({
+      msg: "Viajes encontrados correctamente.",
+      count: trips.length,
+      data: trips
+    });
+  } catch (error) {
+    console.error("Error al obtener viajes del usuario:", error);
+    res.status(500).json({ msg: "Error interno al obtener los viajes." });
+  }
+};
+
+exports.cancelPassengerTrip = async (req, res) => {
+  try {
+    const { id, userId } = req.params;
+
+    const trip = await Trip.findById(id);
+    if (!trip) {
+      return res.status(404).json({ msg: "Viaje no encontrado." });
+    }
+
+    const passenger = trip.passengers.find(p => p.user.toString() === userId);
+    if (!passenger) {
+      return res.status(404).json({ msg: "Pasajero no encontrado en el viaje." });
+    }
+
+    if (passenger.status === "Cancelado") {
+      return res.status(400).json({ msg: "El pasajero ya ha cancelado este viaje." });
+    }
+
+    passenger.status = "Cancelado";
+    await trip.save();
+
+    res.status(200).json({
+      msg: "El pasajero ha cancelado su participación en el viaje.",
+      data: trip
+    });
+  } catch (error) {
+    console.error("Error al cancelar la participación del pasajero:", error);
+    res.status(500).json({ msg: "Error interno al cancelar participación del pasajero." });
+  }
+};
+
+
+
+
+
 
 
 

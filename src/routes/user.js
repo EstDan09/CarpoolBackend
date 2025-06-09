@@ -7,4 +7,5 @@ module.exports = function (app) {
     app.put("/backend/user/update", userController.update); 
     app.get("/backend/user/:id", userController.getUserById); 
     app.get("/backend/users", userController.getAllUsers); 
+    app.post("/backend/user/add-notification", userController.addNotificationToUser);
 };

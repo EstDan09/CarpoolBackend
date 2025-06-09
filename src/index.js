@@ -78,6 +78,7 @@ connectDB().then(() => {
     require("./routes/vehicle")(app);
     require("./routes/institution")(app);
     require("./routes/office")(app);
+    require("./routes/statistics")(app);
 
 
   
