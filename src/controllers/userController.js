@@ -48,7 +48,7 @@ exports.update = async (req, res) => {
     }
 
     const allowed = [
-      "name", "fisrtSurname", "secondSurname", "phone",
+      "name", "firstSurname", "secondSurname", "phone",
       "username", "email", "password", "institutionId",
       "identificationTypeId", "identificationNumber",
       "birthDate", "genre", "photoKey", "photoUrl",
@@ -104,7 +104,7 @@ exports.register = async (req, res) => {
   try {
     const {
       name,
-      fisrtSurname,
+      firstSurname,
       secondSurname,
       phone,
       username,
@@ -124,7 +124,7 @@ exports.register = async (req, res) => {
 
     if (
       !name ||
-      !fisrtSurname ||
+      !firstSurname ||
       !secondSurname ||
       !phone ||
       !username ||
@@ -169,7 +169,7 @@ exports.register = async (req, res) => {
 
     const newUser = new User({
       name,
-      fisrtSurname,
+      firstSurname,
       secondSurname,
       phone,
       username,
