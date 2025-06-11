@@ -9,7 +9,7 @@ const UserSchema = mongoose.Schema(
       required: true,
       trim: true,
     },
-    fisrtSurname: {
+    firstSurname: {
       type: String,
       required: true,
       trim: true,
@@ -20,7 +20,7 @@ const UserSchema = mongoose.Schema(
       trim: true,
     },
     phone: {
-      type: String,
+      type: Number,
       required: true,
       trim: true,
     },
