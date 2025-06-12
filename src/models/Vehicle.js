@@ -7,6 +7,11 @@ const VehicleSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    year: {
+      type: String,
+      required: true,
+      trim: true,
+    },
     brand: {
       type: String,
       required: true,
