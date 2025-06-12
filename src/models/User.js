@@ -48,7 +48,7 @@ const UserSchema = mongoose.Schema(
     },
     identificationTypeId: {
       type: String,
-      enum: ["Cedula", "DIMEX", "Pasaporte"],
+      enum: ["Cédula", "DIMEX", "Pasaporte"],
       required: false,
     },
     identificationNumber: {
