@@ -65,7 +65,17 @@ const TripSchema = mongoose.Schema(
       },
       min: 0,
       default: 0
-    }
+    },
+    vehicle: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Vehicle",
+      required: true,
+    },
+    passengerLimit: {
+      type: Number,
+      required: true,
+      min: 1,
+    },
   },
   {
     timestamps: true,

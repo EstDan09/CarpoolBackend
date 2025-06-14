@@ -173,20 +173,23 @@ exports.filteredUserCountByMonth = async (req, res) => {
   try {
     const { institutionId, startDate, endDate, genres, role } = req.body;
 
-    if (!institutionId || !startDate || !endDate || !role) {
-      return res.status(400).json({ msg: "Faltan campos obligatorios: institutionId, startDate, endDate y role." });
+    if (!startDate || !endDate || !role) {
+      return res.status(400).json({ msg: "Faltan campos obligatorios: startDate, endDate y role." });
     }
 
     const matchStage = {
       role: role,
-      institutionId: institutionId,
       birthDate: {
         $gte: new Date(startDate),
         $lte: new Date(endDate)
       }
     };
 
-    if (Array.isArray(genres) && genres.length > 0) {
+    if (institutionId && institutionId !== "all") {
+      matchStage.institutionId = institutionId;
+    }
+
+    if (Array.isArray(genres) && genres.length > 0 && !genres.includes("all")) {
       matchStage.genre = { $in: genres };
     }
 
@@ -209,7 +212,6 @@ exports.filteredUserCountByMonth = async (req, res) => {
       }
     ]);
 
-    // Transformar el resultado para que tenga formato legible
     const data = users.map(u => ({
       year: u._id.year,
       month: u._id.month,
@@ -241,7 +243,6 @@ exports.userCountByAgeRanges = async (req, res) => {
       { min: 76, max: 120 }
     ];
 
-    // Construye los filtros dinámicamente
     const matchStage = {};
     if (institutionId) {
       matchStage.institutionId = new mongoose.Types.ObjectId(institutionId);

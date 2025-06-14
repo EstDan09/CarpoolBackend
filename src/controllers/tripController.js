@@ -7,25 +7,26 @@ exports.registerTrip = async (req, res) => {
       endpoint,
       departure,
       arrival,
-      stops       = [],
-      passengers  = [],
+      stops        = [],
+      passengers   = [],
       driver,
+      vehicle,
+      passengerLimit,
       paymethod,
       costPerPerson
     } = req.body;
 
     if (
-      !startpoint ||
-      !endpoint  ||
-      !departure ||
-      !arrival   ||
-      !driver    ||
-      !paymethod ||
-      costPerPerson == null
+      !startpoint      || !endpoint     ||
+      !departure       || !arrival      ||
+      !driver          || !vehicle      ||
+      !paymethod       || passengerLimit == null ||
+      costPerPerson    == null
     ) {
       return res.status(400).json({
         msg: `Faltan campos obligatorios. Debes enviar:
-          startpoint, endpoint, departure, arrival, driver, paymethod y costPerPerson`
+          startpoint, endpoint, departure, arrival, driver,
+          vehicle, passengerLimit, paymethod y costPerPerson`
       });
     }
 
@@ -37,9 +38,9 @@ exports.registerTrip = async (req, res) => {
 
     const métodos = ["Gratuito", "Sinpe", "Efectivo"];
     if (!métodos.includes(paymethod)) {
-      return res
-        .status(400)
-        .json({ msg: `Método de pago inválido. Debe ser uno de: ${métodos.join(", ")}` });
+      return res.status(400).json({
+        msg: `Método de pago inválido. Debe ser uno de: ${métodos.join(", ")}`
+      });
     }
     if (typeof costPerPerson !== "number" || costPerPerson < 0) {
       return res
@@ -47,6 +48,21 @@ exports.registerTrip = async (req, res) => {
         .json({ msg: "costPerPerson debe ser un número ≥ 0." });
     }
     const finalCost = paymethod === "Gratuito" ? 0 : costPerPerson;
+
+    if (
+      typeof passengerLimit !== "number" ||
+      passengerLimit < 1 ||
+      !Number.isInteger(passengerLimit)
+    ) {
+      return res
+        .status(400)
+        .json({ msg: "passengerLimit debe ser un entero ≥ 1." });
+    }
+    if (passengers.length > passengerLimit) {
+      return res.status(400).json({
+        msg: `El viaje permite máximo ${passengerLimit} pasajeros, pero enviaste ${passengers.length}.`
+      });
+    }
 
     for (const s of stops) {
       if (!s.place) {
@@ -71,9 +87,12 @@ exports.registerTrip = async (req, res) => {
       stops,
       passengers,
       driver,
+      vehicle,
+      passengerLimit,
       paymethod,
       costPerPerson: finalCost
     });
+
     await trip.save();
 
     return res
@@ -87,6 +106,7 @@ exports.registerTrip = async (req, res) => {
       .json({ msg: "Error interno al registrar el viaje." });
   }
 };
+
 
 exports.getTrips = async (_req, res) => {
   try {
@@ -375,6 +395,101 @@ exports.cancelPassengerTrip = async (req, res) => {
     res.status(500).json({ msg: "Error interno al cancelar participación del pasajero." });
   }
 };
+
+exports.getTripsParams = async (req, res) => {
+  try {
+    const { startDate, endDate, institutionId } = req.body;
+
+    if (!startDate || !endDate) {
+      return res.status(400).json({ msg: "Los campos startDate y endDate son obligatorios." });
+    }
+
+    const dateFilter = {
+      departure: {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate),
+      },
+    };
+
+    const matchInstitution = institutionId && institutionId !== "all";
+
+    const trips = await Trip.aggregate([
+      { $match: dateFilter },
+      {
+        $lookup: {
+          from: "users",
+          localField: "driver",
+          foreignField: "_id",
+          as: "driver"
+        }
+      },
+      { $unwind: "$driver" },
+      ...(matchInstitution ? [
+        {
+          $match: {
+            "driver.institutionId": new mongoose.Types.ObjectId(institutionId)
+          }
+        }
+      ] : []),
+      {
+        $lookup: {
+          from: "places",
+          localField: "startpoint",
+          foreignField: "_id",
+          as: "startpoint"
+        }
+      },
+      { $unwind: "$startpoint" },
+      {
+        $lookup: {
+          from: "places",
+          localField: "endpoint",
+          foreignField: "_id",
+          as: "endpoint"
+        }
+      },
+      { $unwind: "$endpoint" },
+      {
+        $lookup: {
+          from: "places",
+          localField: "stops.place",
+          foreignField: "_id",
+          as: "stopPlaces"
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          departure: 1,
+          arrival: 1,
+          paymethod: 1,
+          costPerPerson: 1,
+          passengers: 1,
+          stops: 1,
+          driver: {
+            _id: "$driver._id",
+            name: "$driver.name",
+            email: "$driver.email",
+            institutionId: "$driver.institutionId"
+          },
+          startpoint: "$startpoint",
+          endpoint: "$endpoint",
+          stopPlaces: "$stopPlaces"
+        }
+      },
+      { $sort: { departure: 1 } }
+    ]);
+
+    res.status(200).json({
+      msg: "Viajes filtrados correctamente.",
+      data: trips
+    });
+  } catch (error) {
+    console.error("Error al filtrar viajes:", error);
+    res.status(500).json({ msg: "Error interno al filtrar viajes." });
+  }
+};
+
 
 
 
