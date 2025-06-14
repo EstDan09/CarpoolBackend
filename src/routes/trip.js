@@ -11,7 +11,7 @@ module.exports = function (app) {
   app.post("/backend/trip/:id/passengers", tripController.addPassengerToTrip);
   app.get("/backend/trip/:id/passengers", tripController.getTripPassengers);
   app.get("/backend/trip/with-passenger-count", tripController.getAllTripsWithPassengerCount);
-  app.get("/backend/trips/user/:userId", tripController.getTripsByPassenger);
+  app.get("/backend/trips/user/:userId", tripController.getTripsByUser);
   app.put("/backend/trips/:id/cancel/:userId", tripController.cancelPassengerTrip);
 };
 

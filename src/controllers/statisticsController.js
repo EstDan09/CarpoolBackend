@@ -60,51 +60,51 @@ exports.getTripsByHourRange = async (req, res) => {
 };
 
 exports.freeVsChargedTrips = async (req, res) => {
-    try {
-        const result = await Trip.aggregate([
-            {
-              $facet: {
-                free: [
-                  { $match: { costPerPerson: 0 } },
-                  { $count: "amount" }
-                ],
-                total: [
-                  { $count: "amount" }
-                ]
-              }
-            }
-          ]);
+  try {
+    const result = await Trip.aggregate([
+      {
+        $facet: {
+          free: [
+            { $match: { costPerPerson: 0 } },
+            { $count: "amount" }
+          ],
+          total: [
+            { $count: "amount" }
+          ]
+        }
+      }
+    ]);
 
-        //Si no hay ninguno gratis
-        let freeCount;
-        if (!result[0].free[0]) {
-          freeCount = 0;
-        //Si hay al menos uno gratis
-        } else {
-          freeCount = result[0].free[0].amount;
-        }
+    //Si no hay ninguno gratis
+    let freeCount;
+    if (!result[0].free[0]) {
+      freeCount = 0;
+      //Si hay al menos uno gratis
+    } else {
+      freeCount = result[0].free[0].amount;
+    }
 
-        let totalCount;
-        //Si no hay viajes en total
-        if (!result[0].total[0]) {
-          totalCount = 0;
-        //Si hay al mmenos un viaje en total
-        } else {
-          totalCount = result[0].total[0].amount;
-        }
-        response = {
-          totalCount : totalCount,
-          freeCount : freeCount,
-          paidCount : totalCount-freeCount,
-          freeProportion : freeCount/totalCount,
-          paidProportion : 1-freeCount/totalCount
-        }
-        console.log(response);
-        res.status(201).json({ msg: "Estadisticas obtenidas exitosamente", data: response });
-    } catch (error) {
-        console.error("Error al cargar estadistica", error);
-        res.status(500).json({ msg: "Error al cargar estadistica"});
-    } 
+    let totalCount;
+    //Si no hay viajes en total
+    if (!result[0].total[0]) {
+      totalCount = 0;
+      //Si hay al mmenos un viaje en total
+    } else {
+      totalCount = result[0].total[0].amount;
+    }
+    response = {
+      totalCount: totalCount,
+      freeCount: freeCount,
+      paidCount: totalCount - freeCount,
+      freeProportion: freeCount / totalCount,
+      paidProportion: 1 - freeCount / totalCount
+    }
+    console.log(response);
+    res.status(201).json({ msg: "Estadisticas obtenidas exitosamente", data: response });
+  } catch (error) {
+    console.error("Error al cargar estadistica", error);
+    res.status(500).json({ msg: "Error al cargar estadistica" });
+  }
 }
 
 exports.userStatistics = async (req, res) => {
@@ -230,7 +230,7 @@ exports.filteredUserCountByMonth = async (req, res) => {
 exports.userCountByAgeRanges = async (req, res) => {
   try {
     const today = new Date();
-    const { ranges } = req.body;
+    const { ranges, institutionId, genre } = req.body;
 
     const ageRanges = Array.isArray(ranges) && ranges.length > 0 ? ranges : [
       { min: 0, max: 18 },
@@ -241,7 +241,17 @@ exports.userCountByAgeRanges = async (req, res) => {
       { min: 76, max: 120 }
     ];
 
+    // Construye los filtros dinámicamente
+    const matchStage = {};
+    if (institutionId) {
+      matchStage.institutionId = new mongoose.Types.ObjectId(institutionId);
+    }
+    if (genre) {
+      matchStage.genre = genre;
+    }
+
     const users = await User.aggregate([
+      { $match: matchStage },
       {
         $project: {
           age: {
@@ -280,13 +290,42 @@ exports.userCountByAgeRanges = async (req, res) => {
   }
 };
 
+
 /* {
   "ranges": [
     { "min": 18, "max": 25 },
-    { "min": 26, "max": 35 },
-    { "min": 36, "max": 99 }
-  ]
+    { "min": 26, "max": 35 }
+  ],
+  "institutionId": "665f1d42cbbf1c6d1d23e0b9",
+  "genre": "Femenino"
 } */
+
+exports.getTripsByDriver = async (req, res) => {
+  try {
+    const { driverId } = req.params;
+
+    if (!driverId || !mongoose.Types.ObjectId.isValid(driverId)) {
+      return res.status(400).json({ msg: "ID de conductor inválido o no proporcionado." });
+    }
+
+    const trips = await Trip.find({ driver: driverId })
+      .populate("startpoint", "name")
+      .populate("endpoint", "name")
+      .populate("stops.place", "name")
+      .populate("passengers.user", "name firstSurname email")
+      .populate("driver", "name firstSurname email")
+      .sort({ departure: -1 });
+
+    res.status(200).json({
+      msg: "Viajes del conductor obtenidos correctamente.",
+      data: trips
+    });
+
+  } catch (error) {
+    console.error("Error al obtener viajes por conductor:", error);
+    res.status(500).json({ msg: "Error interno al obtener los viajes." });
+  }
+};
 
 exports.tripPaymentStats = async (req, res) => {
   try {
@@ -612,7 +651,7 @@ exports.topVisitedPlaces = async (req, res) => {
 
 exports.topUsersWithApprovedTrips = async (req, res) => {
   try {
-    const limit = parseInt(req.query.limit) || 5; 
+    const limit = parseInt(req.query.limit) || 5;
 
     const result = await Trip.aggregate([
       { $unwind: "$passengers" },

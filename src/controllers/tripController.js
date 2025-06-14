@@ -261,7 +261,7 @@ exports.getTripPassengers = async (req, res) => {
     const { id } = req.params;
 
     const trip = await Trip.findById(id)
-      .populate("passengers.user", "name email") // puedes agregar más campos si los necesitas
+      .populate("passengers.user", "name email") 
       .lean();
 
     if (!trip) {
@@ -305,7 +305,7 @@ exports.getAllTripsWithPassengerCount = async (req, res) => {
   }
 };
 
-exports.getTripsByPassenger = async (req, res) => {
+exports.getTripsByUser = async (req, res) => {
   try {
     const { userId } = req.params;
     const { status, driver } = req.query;

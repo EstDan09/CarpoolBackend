@@ -23,4 +23,8 @@ module.exports = function (app) {
   app.post("/backend/statistics/users/by-age-range", statisticsController.userCountByAgeRanges);
 
   app.get("/backend/statistics/places/top", statisticsController.topVisitedPlaces);
+  app.get("/backend/statistics/get-trips/:id", statisticsController.getTripsByDriver);
+
+
+
 };
