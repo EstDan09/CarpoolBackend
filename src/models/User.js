@@ -80,7 +80,7 @@ const UserSchema = mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["Conductor", "Pasajero"],
+      enum: ["Conductor", "Pasajero", "Admin"],
       required: true,
     },
     vehicles: [
