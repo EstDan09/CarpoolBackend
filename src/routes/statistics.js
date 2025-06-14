@@ -9,6 +9,8 @@ module.exports = function (app) {
   app.get("/backend/statistics/trips/top-free", statisticsController.topDriversWithMostFreeTrips);
   app.get("/backend/statistics/trips/driver-revenue", statisticsController.averageRevenuePerDriver);
   app.get("/backend/statistics/trips/top-cancellations", statisticsController.topDriversWithMostCancellations);
+  app.get("/backend/statistics/trips/hour-range", statisticsController.getTripsByHourRange);
+  app.get("/backend/statistics/trips/hour", statisticsController.getTripsByHour);
 
   app.post("/backend/statistics/trips/by-month", statisticsController.filteredTripCountByMonth);
 
