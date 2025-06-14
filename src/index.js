@@ -18,13 +18,24 @@ connectDB().then(() => {
     // Habilitar parser de json para el request body
     app.use(express.json())
 
-    app.use(
-      cors({
-        origin: "http://localhost:3000", 
-        methods: ["GET","POST","PUT","DELETE","OPTIONS"], 
-        allowedHeaders: ["Content-Type","Authorization"]
-      })
-    );
+    const allowedOrigins = [ //cambien las ips, no los puertos
+	  "http://192.168.100.11:8081",
+	  "http://192.168.100.11:5173"
+	];
+
+	app.use(
+	  cors({
+	    origin: (origin, callback) => {
+	      if (!origin || allowedOrigins.includes(origin)) {
+		callback(null, true);
+	      } else {
+		callback(new Error("No permitido por CORS"));
+	      }
+	    },
+	    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+	    allowedHeaders: ["Content-Type", "Authorization"]
+	  })
+	);
   
     // Cache headers para respuestas dinámicas
     app.use((req, res, next) => {
