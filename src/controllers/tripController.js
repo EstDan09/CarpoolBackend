@@ -1,4 +1,5 @@
 const Trip = require("../models/Trip");
+const mongoose = require("mongoose");
 
 exports.registerTrip = async (req, res) => {
   try {
@@ -398,23 +399,26 @@ exports.cancelPassengerTrip = async (req, res) => {
 
 exports.getTripsParams = async (req, res) => {
   try {
-    const { startDate, endDate, institutionId } = req.body;
+    const { startDate, endDate, institutionId, endpoint } = req.body;
 
     if (!startDate || !endDate) {
       return res.status(400).json({ msg: "Los campos startDate y endDate son obligatorios." });
     }
 
-    const dateFilter = {
+    const matchStage = {
       departure: {
         $gte: new Date(startDate),
         $lte: new Date(endDate),
       },
     };
+    if (endpoint) {
+        matchStage.endpoint = new mongoose.Types.ObjectId(endpoint);
+    }
 
     const matchInstitution = institutionId && institutionId !== "all";
 
     const trips = await Trip.aggregate([
-      { $match: dateFilter },
+      { $match: matchStage },
       {
         $lookup: {
           from: "users",
