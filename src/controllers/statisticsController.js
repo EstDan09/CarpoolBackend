@@ -116,20 +116,32 @@ exports.freeVsChargedTrips = async (req, res) => {
 exports.userStatistics = async (req, res) => {
   try {
     const today = new Date();
+    const currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
 
-    const users = await User.aggregate([
+    const getMonthFilter = (date) => ({
+      $gte: date,
+      $lt: new Date(date.getFullYear(), date.getMonth() + 1, 1)
+    });
+
+    const [currentStats] = await User.aggregate([
       {
         $facet: {
           totalDrivers: [
-            { $match: { role: "Conductor" } },
+            { $match: { role: "Conductor", createdAt: getMonthFilter(currentMonth) } },
             { $count: "count" }
           ],
           totalPassengers: [
-            { $match: { role: "Pasajero" } },
+            { $match: { role: "Pasajero", createdAt: getMonthFilter(currentMonth) } },
             { $count: "count" }
           ],
           totalActive: [
-            { $match: { type: { $in: ["Administrador", "Usuario"] } } },
+            {
+              $match: {
+                type: { $in: ["Administrador", "Usuario"] },
+                createdAt: getMonthFilter(currentMonth)
+              }
+            },
             { $count: "count" }
           ],
           avgAge: [
@@ -157,15 +169,65 @@ exports.userStatistics = async (req, res) => {
       }
     ]);
 
+    const [lastStats] = await User.aggregate([
+      {
+        $facet: {
+          totalDrivers: [
+            { $match: { role: "Conductor", createdAt: getMonthFilter(lastMonth) } },
+            { $count: "count" }
+          ],
+          totalPassengers: [
+            { $match: { role: "Pasajero", createdAt: getMonthFilter(lastMonth) } },
+            { $count: "count" }
+          ],
+          totalActive: [
+            {
+              $match: {
+                type: { $in: ["Administrador", "Usuario"] },
+                createdAt: getMonthFilter(lastMonth)
+              }
+            },
+            { $count: "count" }
+          ]
+        }
+      }
+    ]);
+
+    const extractCount = (facet, field) => facet[field][0]?.count || 0;
+    const extractGrowth = (now, prev) =>
+      prev === 0 ? (now > 0 ? 100 : 0) : Math.round(((now - prev) / prev) * 100);
+
+    const current = {
+      drivers: extractCount(currentStats, "totalDrivers"),
+      passengers: extractCount(currentStats, "totalPassengers"),
+      active: extractCount(currentStats, "totalActive"),
+      avgAge: currentStats.avgAge[0]?.avgAge || null
+    };
+
+    const previous = {
+      drivers: extractCount(lastStats, "totalDrivers"),
+      passengers: extractCount(lastStats, "totalPassengers"),
+      active: extractCount(lastStats, "totalActive")
+    };
+
     const result = {
-      totalDrivers: users[0].totalDrivers[0]?.count || 0,
-      totalPassengers: users[0].totalPassengers[0]?.count || 0,
-      totalActiveUsers: users[0].totalActive[0]?.count || 0,
-      averageAge: users[0].avgAge[0]?.avgAge ? Math.round(users[0].avgAge[0].avgAge * 100) / 100 : null
+      totalDrivers: {
+        value: current.drivers,
+        growth: extractGrowth(current.drivers, previous.drivers)
+      },
+      totalPassengers: {
+        value: current.passengers,
+        growth: extractGrowth(current.passengers, previous.passengers)
+      },
+      totalActiveUsers: {
+        value: current.active,
+        growth: extractGrowth(current.active, previous.active)
+      },
+      averageAge: current.avgAge !== null ? Math.round(current.avgAge * 100) / 100 : null
     };
 
     res.status(200).json({
-      msg: "Estadísticas de usuarios obtenidas exitosamente.",
+      msg: "Estadísticas de usuarios con crecimiento mensual obtenidas exitosamente.",
       data: result
     });
 
@@ -185,7 +247,7 @@ exports.filteredUserCountByMonth = async (req, res) => {
 
     const matchStage = {
       role: role,
-      birthDate: {
+      createdAt: {
         $gte: new Date(startDate),
         $lte: new Date(endDate)
       }
@@ -204,18 +266,13 @@ exports.filteredUserCountByMonth = async (req, res) => {
       {
         $group: {
           _id: {
-            year: { $year: "$birthDate" },
-            month: { $month: "$birthDate" }
+            year: { $year: "$createdAt" },
+            month: { $month: "$createdAt" }
           },
           count: { $sum: 1 }
         }
       },
-      {
-        $sort: {
-          "_id.year": 1,
-          "_id.month": 1
-        }
-      }
+      { $sort: { "_id.year": 1, "_id.month": 1 } }
     ]);
 
     const data = users.map(u => ({
@@ -234,6 +291,7 @@ exports.filteredUserCountByMonth = async (req, res) => {
     res.status(500).json({ msg: "Error interno al contar usuarios por mes." });
   }
 };
+
 
 exports.userCountByAgeRanges = async (req, res) => {
   try {
@@ -497,7 +555,7 @@ exports.filteredTripCountByMonth = async (req, res) => {
       { $unwind: "$driverData" },
       {
         $match: {
-          "driverData.institutionId": mongoose.Types.ObjectId(institutionId)
+          "driverData.institutionId": new mongoose.Types.ObjectId(institutionId)
         }
       },
       {

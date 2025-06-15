@@ -282,3 +282,40 @@ exports.addNotificationToUser = async (req, res) => {
     res.status(500).json({ msg: "Error interno al agregar notificación" });
   }
 };
+
+exports.changePassword = async (req, res) => {
+  try {
+    const { email, currentPassword, newPassword } = req.body;
+
+    if (!email || !currentPassword || !newPassword) {
+      return res.status(400).json({ msg: "Faltan campos requeridos: email, currentPassword, newPassword." });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ msg: "Usuario no encontrado." });
+    }
+
+    user.comparePassword(currentPassword, async (err, isMatch) => {
+      if (err) {
+        console.error("Error comparando contraseña:", err);
+        return res.status(500).json({ msg: "Error al verificar contraseña." });
+      }
+
+      if (!isMatch) {
+        return res.status(401).json({ msg: "La contraseña actual es incorrecta." });
+      }
+
+      // Asignar nueva contraseña
+      user.password = newPassword;
+      await user.save();
+
+      return res.status(200).json({ msg: "Contraseña actualizada correctamente." });
+    });
+
+  } catch (error) {
+    console.error("Error al cambiar la contraseña:", error);
+    return res.status(500).json({ msg: "Error interno al cambiar la contraseña." });
+  }
+};
+

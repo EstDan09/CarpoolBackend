@@ -9,4 +9,5 @@ module.exports = function (app) {
     app.get("/backend/users", userController.getAllUsers); 
     app.post("/backend/user/add-notification", userController.addNotificationToUser);
     app.get("/backend/user/get-notifications/:id", userController.getNotificationsByUser);
+    app.post("/backend/user/update-password", userController.changePassword)
 };
