@@ -91,9 +91,10 @@ const UserSchema = mongoose.Schema(
     ],
     notifications: [
       {
-        title: { type: String, required: true },
-        subtitle: { type: String, required: true },
-        timestamp: { type: Date, default: Date.now }
+        type: { type: String, required: true, enum: ["VA", "VC", "SP"]},
+        place: { type: String, required: true },
+        timestamp: { type: Date, default: Date.now },
+        tripDate: { type: Date, required: true }
       }
     ]
   },

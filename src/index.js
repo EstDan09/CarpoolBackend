@@ -19,8 +19,8 @@ connectDB().then(() => {
     app.use(express.json())
 
     const allowedOrigins = [ //cambien las ips, no los puertos
-	  "http://192.168.100.11:8081",
-	  "http://192.168.100.11:5173"
+	  "http://192.168.1.20:8081",
+	  "http://192.168.1.20:5173"
 	];
 
 	app.use(
