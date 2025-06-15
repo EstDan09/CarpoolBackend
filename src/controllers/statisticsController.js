@@ -254,7 +254,7 @@ exports.filteredUserCountByMonth = async (req, res) => {
     };
 
     if (institutionId && institutionId !== "all") {
-      matchStage.institutionId = institutionId;
+      matchStage.institutionId = new mongoose.Types.ObjectId(institutionId);
     }
 
     if (Array.isArray(genres) && genres.length > 0 && !genres.includes("all")) {
@@ -522,11 +522,10 @@ exports.filteredTripCountByMonth = async (req, res) => {
   try {
     const { institutionId, startDate, endDate, hourStart, hourEnd } = req.body;
 
-    if (!institutionId || !startDate || !endDate || !hourStart || !hourEnd) {
-      return res.status(400).json({ msg: "Faltan campos obligatorios: institutionId, startDate, endDate, hourStart, hourEnd." });
+    if (!startDate || !endDate || !hourStart || !hourEnd) {
+      return res.status(400).json({ msg: "Faltan campos obligatorios: startDate, endDate, hourStart, hourEnd." });
     }
 
-    // Convertir horas a enteros comparables (ej: "06:30" -> 630)
     const parseHour = (h) => {
       const [hour, minute] = h.split(":").map(Number);
       return hour * 100 + minute;
@@ -535,7 +534,7 @@ exports.filteredTripCountByMonth = async (req, res) => {
     const hStart = parseHour(hourStart);
     const hEnd = parseHour(hourEnd);
 
-    const result = await Trip.aggregate([
+    const pipeline = [
       {
         $match: {
           departure: {
@@ -553,11 +552,17 @@ exports.filteredTripCountByMonth = async (req, res) => {
         }
       },
       { $unwind: "$driverData" },
-      {
+    ];
+
+    if (institutionId && institutionId !== "all") {
+      pipeline.push({
         $match: {
           "driverData.institutionId": new mongoose.Types.ObjectId(institutionId)
         }
-      },
+      });
+    }
+
+    pipeline.push(
       {
         $addFields: {
           depHour: {
@@ -582,10 +587,10 @@ exports.filteredTripCountByMonth = async (req, res) => {
           count: { $sum: 1 }
         }
       },
-      {
-        $sort: { "_id.year": 1, "_id.month": 1 }
-      }
-    ]);
+      { $sort: { "_id.year": 1, "_id.month": 1 } }
+    );
+
+    const result = await Trip.aggregate(pipeline);
 
     const data = result.map(r => ({
       year: r._id.year,
@@ -603,6 +608,7 @@ exports.filteredTripCountByMonth = async (req, res) => {
     res.status(500).json({ msg: "Error interno al contar viajes por mes." });
   }
 };
+
 
 exports.topDriversByTripCount = async (req, res) => {
   try {
