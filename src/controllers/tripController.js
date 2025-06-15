@@ -406,8 +406,7 @@ exports.getTripsParams = async (req, res) => {
     }
 
     const matchStage = {
-      departure: {
-        $gte: new Date(startDate),
+      arrival: {
         $lte: new Date(endDate),
       },
     };
