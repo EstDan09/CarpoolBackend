@@ -225,22 +225,44 @@ exports.getAllUsers = async (req, res) => {
     }
 };
 
+exports.getNotificationsByUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) { return res.status(400).json({msg: "Falta el id del usuario"});}
+
+    const projectFields = {notifications: 1};
+    const cursor = await User.findOne({_id: id}).select(projectFields);
+
+    if (!cursor.notifications) { return res.status(404).json({msg: "No se pudieron obtener las notificaciones"});}
+    
+    res.status(200).json({
+      msg: "Notificaciones obtenidas exitosamente",
+      data: cursor.notifications
+    })
+  } catch (error) {
+    console.error("Error al obtener notificaciones:", error);
+    res.status(500).json({ msg: "Error interno al obtener notificaciones" });
+  }
+};
+
 exports.addNotificationToUser = async (req, res) => {
   try {
-    const { email, title, subtitle } = req.body;
+    const { email, type, place, tripDate } = req.body;
 
-    if (!email || !title || !subtitle) {
-      return res.status(400).json({ msg: "Faltan campos requeridos: email, title o subtitle" });
+    if (!email || !type || !place || !tripDate) {
+      return res.status(400).json({ msg: "Faltan campos requeridos: email, type, place o tripDate" });
     }
-
+    const date = new Date();
     const updatedUser = await User.findOneAndUpdate(
       { email },
       {
         $push: {
           notifications: {
-            title,
-            subtitle,
-            timestamp: new Date()
+            type,
+            place,
+            timestamp: new Date(),
+            tripDate
           }
         }
       },
