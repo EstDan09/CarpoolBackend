@@ -3,13 +3,13 @@ const User = require("../models/User");
 
 exports.registerVehicle = async (req, res) => {
   try {
-    const { model, year, brand, color, plate, userId } = req.body;
+    const { model, year, brand, color, plate, userId, photoKey, photoUrl } = req.body;
 
     if (!model || !year || !brand || !color || !plate || !userId) {
       return res.status(400).json({ msg: "Todos los campos (incluyendo userId) son requeridos." });
     }
 
-    const newVehicle = new Vehicle({ model, year, brand, color, plate });
+    const newVehicle = new Vehicle({ model, year, brand, color, plate, photoKey, photoUrl });
     await newVehicle.save();
 
     const updatedUser = await User.findByIdAndUpdate(
@@ -69,15 +69,15 @@ exports.getVehicleById = async (req, res) => {
 exports.updateVehicle = async (req, res) => {
   try {
     const { id } = req.params;
-    const { model, brand, color, plate } = req.body;
+    const { model, brand, color, plate, year, photoKey, photoUrl } = req.body;
 
-    if (!model || !brand || !color || !plate) {
+    if (!model || !brand || !color || !plate || !year) {
       return res.status(400).json({ msg: "Todos los campos son requeridos para actualizar." });
     }
 
     const updatedVehicle = await Vehicle.findByIdAndUpdate(
       id,
-      { model, brand, color, plate },
+      { model, brand, color, plate, year, photoKey, photoUrl },
       { new: true, runValidators: true }
     );
 

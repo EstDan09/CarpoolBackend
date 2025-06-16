@@ -28,6 +28,14 @@ const VehicleSchema = new mongoose.Schema(
       trim: true,
       unique: true,
     },
+    photoKey: {
+      type: String,
+      required: false,
+    },
+    photoUrl: {
+      type: String,
+      required: false,
+    },
   },
   {
     timestamps: true,
