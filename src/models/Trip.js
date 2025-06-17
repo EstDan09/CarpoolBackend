@@ -32,6 +32,12 @@ const TripSchema = mongoose.Schema(
           enum: ["Pendiente", "Aprobado", "Rechazado"],
           default: "Pendiente",
         },
+        passengersId: [
+          {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User"
+          }
+        ]
       },
     ],
     passengers: [

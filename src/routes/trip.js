@@ -8,6 +8,7 @@ module.exports = function (app) {
   app.patch("/backend/trip/:id/stops/:placeId/status", tripController.updateStopStatus);
   app.patch("/backend/trip/:id/passengers/:userId/status", tripController.updatePassengerStatus);
   app.post("/backend/trip/:id/stops", tripController.addStopToTrip);
+  app.post("/backend/trip/:id/stops/:placeId/users", tripController.addUserToStop);
   app.post("/backend/trip/:id/passengers", tripController.addPassengerToTrip);
   app.get("/backend/trip/:id/passengers", tripController.getTripPassengers);
   app.get("/backend/trip/with-passenger-count", tripController.getAllTripsWithPassengerCount);

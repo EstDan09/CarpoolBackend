@@ -170,8 +170,83 @@ exports.updateStopStatus = async (req, res) => {
     const { id, placeId } = req.params;
     const { status } = req.body;
 
-    if (!["accepted", "denied"].includes(status)) {
-      return res.status(400).json({ msg: "Estado inválido. Debe ser 'accepted' o 'denied'." });
+    // Mapeo de estados
+    const mapping = {
+      accepted: "Aprobado",
+      denied:   "Rechazado"
+    };
+    const newStatus = mapping[status];
+    if (!newStatus) {
+      return res
+        .status(400)
+        .json({ msg: "Estado inválido. Debe ser 'accepted' o 'denied'." });
+    }
+
+    const trip = await Trip.findById(id);
+    if (!trip) {
+      return res.status(404).json({ msg: "Viaje no encontrado." });
+    }
+
+    // Busco la parada por placeId
+    const stop = trip.stops.find(s => s.place.toString() === placeId);
+    if (!stop) {
+      return res.status(404).json({ msg: "Parada no encontrada." });
+    }
+
+    // Actualizo y guardo
+    stop.status = newStatus;
+    await trip.save();
+
+    res
+      .status(200)
+      .json({ msg: "Estado de la parada actualizado correctamente.", data: trip });
+  } catch (error) {
+    console.error("Error al actualizar el estado de la parada:", error);
+    res
+      .status(500)
+      .json({ msg: "Error interno al actualizar el estado de la parada." });
+  }
+};
+
+exports.addStopToTrip = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { place, user } = req.body;
+
+    if (!place || !mongoose.Types.ObjectId.isValid(place)) {
+      return res.status(400).json({ msg: "ID de lugar (place) inválido." });
+    }
+    if (user && !mongoose.Types.ObjectId.isValid(user)) {
+      return res.status(400).json({ msg: "ID de usuario inválido." });
+    }
+
+    const trip = await Trip.findById(id);
+    if (!trip) {
+      return res.status(404).json({ msg: "Viaje no encontrado." });
+    }
+
+    trip.stops.push({
+      place,
+      status: "Pendiente",
+      passengersId: user ? [user] : []
+    });
+
+    await trip.save();
+    res.status(200).json({ msg: "Parada solicitada exitosamente.", data: trip });
+
+  } catch (error) {
+    console.error("Error al solicitar parada:", error);
+    res.status(500).json({ msg: "Error interno al agregar la parada." });
+  }
+};
+
+exports.addUserToStop = async (req, res) => {
+  try {
+    const { id, placeId } = req.params;
+    const { user } = req.body;
+
+    if (!user || !mongoose.Types.ObjectId.isValid(user)) {
+      return res.status(400).json({ msg: "ID de usuario inválido." });
     }
 
     const trip = await Trip.findById(id);
@@ -184,37 +259,30 @@ exports.updateStopStatus = async (req, res) => {
       return res.status(404).json({ msg: "Parada no encontrada." });
     }
 
-    stop.status = status;
-    await trip.save();
-
-    res.status(200).json({ msg: "Estado de la parada actualizado correctamente.", data: trip });
-  } catch (error) {
-    console.error("Error al actualizar el estado de la parada:", error);
-    res.status(500).json({ msg: "Error interno al actualizar el estado de la parada." });
-  }
-};
-
-exports.addStopToTrip = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { place } = req.body;
-
-    if (!place) {
-      return res.status(400).json({ msg: "ID del lugar (place) es requerido." });
+    if (stop.status !== "Aprobado") {
+      return res.status(400).json({
+        msg: "Sólo puedes agregar usuarios a una parada 'Aprobado'."
+      });
     }
 
-    const trip = await Trip.findById(id);
-    if (!trip) {
-      return res.status(404).json({ msg: "Viaje no encontrado." });
+    // Evito duplicados
+    if (stop.passengersId.some(u => u.toString() === user)) {
+      return res.status(400).json({
+        msg: "El usuario ya está agregado en esta parada."
+      });
     }
 
-    trip.stops.push({ place });
+    stop.passengersId.push(user);
     await trip.save();
 
-    res.status(200).json({ msg: "Parada agregada exitosamente.", data: trip });
+    res.status(200).json({
+      msg: "Usuario agregado a la parada exitosamente.",
+      data: trip
+    });
+
   } catch (error) {
-    console.error("Error al agregar parada:", error);
-    res.status(500).json({ msg: "Error interno al agregar la parada." });
+    console.error("Error al agregar usuario a la parada:", error);
+    res.status(500).json({ msg: "Error interno al agregar usuario a la parada." });
   }
 };
 
