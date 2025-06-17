@@ -1,26 +1,29 @@
 const User = require("../models/User");
 
 exports.addCars = async (req, res) => {
-    try {
-        const cars = req.body.cars;
-        const email = req.body.email;
-        if (!cars || !email) return res.status(400).json({msg: "Informacion incompleta"});
-        const data = User.findOneAndUpdate(
-            {email: email},
-            {$push: {vehicles:
-                {$each:cars}
-            }}
-        );
-        res.status(201).json({msg: "Vehiculos agregados exitosamente", data: data});
-    } catch (error) {
-        console.error("Error al actualizar agregar carros", error);
-        res.status(500).json({ msg: "Error al agregar carros"});
-    }
+  try {
+    const cars = req.body.cars;
+    const email = req.body.email;
+    if (!cars || !email) return res.status(400).json({ msg: "Informacion incompleta" });
+    const data = User.findOneAndUpdate(
+      { email: email },
+      {
+        $push: {
+          vehicles:
+            { $each: cars }
+        }
+      }
+    );
+    res.status(201).json({ msg: "Vehiculos agregados exitosamente", data: data });
+  } catch (error) {
+    console.error("Error al actualizar agregar carros", error);
+    res.status(500).json({ msg: "Error al agregar carros" });
+  }
 }
 
 exports.update = async (req, res) => {
   try {
-    const { id } = req.params;          
+    const { id } = req.params;
     const updates = req.body;
 
     const user = await User.findById(id);
@@ -74,30 +77,30 @@ exports.update = async (req, res) => {
 };
 
 exports.login = async (req, res) => {
-    try {
-        const {email, password} = req.body;
+  try {
+    const { email, password } = req.body;
 
-        if (!email || !password) {
-            return res.status(400).json({msg: "Informacion incompleta"})
-        }
-
-        const user = await User.findOne({email: email});
-        if (!user) {return res.status(409).json({msg: "No hay una cuenta asociada al correo"})}
-
-        user.comparePassword(password, function (err, match) {
-            if (err) throw err;
-
-            if (match) {
-                res.status(201).json({msg: "Sesion iniciada", data: user});
-            } else {
-                return res.status(400).json({msg: "contrasena incorrecta"})
-            }
-        });
-
-    } catch (error) {
-        console.error("Error al iniciar sesion", error);
-        res.status(500).json({ msg: "Error al iniciar sesion"});
+    if (!email || !password) {
+      return res.status(400).json({ msg: "Informacion incompleta" })
     }
+
+    const user = await User.findOne({ email: email });
+    if (!user) { return res.status(409).json({ msg: "No hay una cuenta asociada al correo" }) }
+
+    user.comparePassword(password, function (err, match) {
+      if (err) throw err;
+
+      if (match) {
+        res.status(201).json({ msg: "Sesion iniciada", data: user });
+      } else {
+        return res.status(400).json({ msg: "contrasena incorrecta" })
+      }
+    });
+
+  } catch (error) {
+    console.error("Error al iniciar sesion", error);
+    res.status(500).json({ msg: "Error al iniciar sesion" });
+  }
 }
 
 exports.register = async (req, res) => {
@@ -141,7 +144,7 @@ exports.register = async (req, res) => {
     }
 
     const domain = email.split("@")[1] || "";
-    if (!["estudiantec.cr","itcr.ac.cr"].includes(domain)) {
+    if (!["estudiantec.cr", "itcr.ac.cr"].includes(domain)) {
       return res
         .status(400)
         .json({ msg: "Correo inválido; dominio debe ser estudiantec.cr o itcr.ac.cr" });
@@ -201,41 +204,41 @@ exports.register = async (req, res) => {
 };
 
 exports.getUserById = async (req, res) => {
-    try {
-        const { id } = req.params;
-        if (!id) return res.status(400).json({ msg: "ID no proporcionado" });
+  try {
+    const { id } = req.params;
+    if (!id) return res.status(400).json({ msg: "ID no proporcionado" });
 
-        const user = await User.findById(id);
-        if (!user) return res.status(404).json({ msg: "Usuario no encontrado" });
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ msg: "Usuario no encontrado" });
 
-        res.status(200).json({ data: user });
-    } catch (error) {
-        console.error("Error al obtener usuario por ID", error);
-        res.status(500).json({ msg: "Error al obtener usuario por ID" });
-    }
+    res.status(200).json({ data: user });
+  } catch (error) {
+    console.error("Error al obtener usuario por ID", error);
+    res.status(500).json({ msg: "Error al obtener usuario por ID" });
+  }
 };
 
 exports.getAllUsers = async (req, res) => {
-    try {
-        const users = await User.find({});
-        res.status(200).json({ data: users });
-    } catch (error) {
-        console.error("Error al obtener todos los usuarios", error);
-        res.status(500).json({ msg: "Error al obtener todos los usuarios" });
-    }
+  try {
+    const users = await User.find({});
+    res.status(200).json({ data: users });
+  } catch (error) {
+    console.error("Error al obtener todos los usuarios", error);
+    res.status(500).json({ msg: "Error al obtener todos los usuarios" });
+  }
 };
 
 exports.getNotificationsByUser = async (req, res) => {
   try {
     const { id } = req.params;
 
-    if (!id) { return res.status(400).json({msg: "Falta el id del usuario"});}
+    if (!id) { return res.status(400).json({ msg: "Falta el id del usuario" }); }
 
-    const projectFields = {notifications: 1};
-    const cursor = await User.findOne({_id: id}).select(projectFields);
+    const projectFields = { notifications: 1 };
+    const cursor = await User.findOne({ _id: id }).select(projectFields);
 
-    if (!cursor.notifications) { return res.status(404).json({msg: "No se pudieron obtener las notificaciones"});}
-    
+    if (!cursor.notifications) { return res.status(404).json({ msg: "No se pudieron obtener las notificaciones" }); }
+
     res.status(200).json({
       msg: "Notificaciones obtenidas exitosamente",
       data: cursor.notifications
@@ -319,3 +322,23 @@ exports.changePassword = async (req, res) => {
   }
 };
 
+exports.getVehicleOwner = async (req, res) => {
+  try {
+    const { carId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(carId)) {
+      return res.status(400).json({ msg: "ID de vehículo inválido." });
+    }
+    const owner = await User.findOne({ vehicles: carId })
+      .select("-password");
+    if (!owner) {
+      return res.status(404).json({ msg: "No se encontró dueño para ese vehículo." });
+    }
+    res.status(200).json({
+      msg: "Dueño del vehículo encontrado exitosamente.",
+      data: owner
+    });
+  } catch (error) {
+    console.error("Error al buscar dueño de vehículo:", error);
+    res.status(500).json({ msg: "Error interno al buscar dueño de vehículo." });
+  }
+};
