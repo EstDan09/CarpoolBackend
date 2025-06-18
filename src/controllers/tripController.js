@@ -469,12 +469,13 @@ exports.getTripsParams = async (req, res) => {
   try {
     const { startDate, endDate, institutionId, endpoint } = req.body;
 
-    if (!startDate || !endDate) {
+    if (!startDate ||!endDate) {
       return res.status(400).json({ msg: "Los campos startDate y endDate son obligatorios." });
     }
 
     const matchStage = {
       arrival: {
+        $gte: new Date(startDate),
         $lte: new Date(endDate),
       },
     };
@@ -537,11 +538,14 @@ exports.getTripsParams = async (req, res) => {
           costPerPerson: 1,
           passengers: 1,
           stops: 1,
+          vehicle: 1,
+          passengerLimit: 1,
           driver: {
             _id: "$driver._id",
             name: "$driver.name",
             email: "$driver.email",
-            institutionId: "$driver.institutionId"
+            institutionId: "$driver.institutionId",
+            photoUrl: "$driver.photoUrl"
           },
           startpoint: "$startpoint",
           endpoint: "$endpoint",
@@ -559,6 +563,26 @@ exports.getTripsParams = async (req, res) => {
     console.error("Error al filtrar viajes:", error);
     res.status(500).json({ msg: "Error interno al filtrar viajes." });
   }
+};
+
+exports.getModelVehicle = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const vehicle = await Vehicle.findById(id) 
+      .select('model brand color')
+      .lean();
+
+    if (!vehicle) {
+      return res.status(404).json({ msg: "Vehiculo no encontrado." });
+    }
+
+    res.status(200).json({ msg: "Vehiculo obtenido exitosamente.", data: vehicle });
+  } catch (error) {
+    console.error("Error al obtener el vehiculo:", error);
+    res.status(500).json({ msg: "Error al obtener el vehiculo." });
+  }
+
 };
 
 

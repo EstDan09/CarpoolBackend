@@ -91,7 +91,7 @@ const UserSchema = mongoose.Schema(
     ],
     notifications: [
       {
-        type: { type: String, required: true, enum: ["VA", "VC", "SP"]},
+        type: { type: String, required: true, enum: ["Viaje cancelado", "Viaje aprobado", "Solicitud pendiente"]},
         place: { type: String, required: true },
         timestamp: { type: Date, default: Date.now },
         tripDate: { type: Date, required: true }
