@@ -15,7 +15,7 @@ module.exports = function (app) {
   app.get("/backend/trips/user/:userId", tripController.getTripsByUser);
   app.put("/backend/trips/:id/cancel/:userId", tripController.cancelPassengerTrip);
   app.post("/backend/trip/filter", tripController.getTripsParams);
-  app.get("/backend/vehicle/getModel/:id", vehicleController.getModelVehicle);
+  app.get("/backend/vehicle/getModel/:id", tripController.getModelVehicle);
 };
 
 //GET /backend/trips/user/664abc123456?status=all
