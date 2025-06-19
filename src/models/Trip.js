@@ -30,7 +30,7 @@ const TripSchema = mongoose.Schema(
         status: {
           type: String,
           enum: ["Pendiente", "Aprobado", "Rechazado"],
-          default: "Pendiente",
+          default: "Aprobado",
         },
         passengersId: [
           {

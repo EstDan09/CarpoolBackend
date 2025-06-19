@@ -12,7 +12,7 @@ exports.registerTrip = async (req, res) => {
       passengers   = [],
       driver,
       vehicle,
-      passengerLimit,
+      passengerLimit, 
       paymethod,
       costPerPerson
     } = req.body;
@@ -50,18 +50,10 @@ exports.registerTrip = async (req, res) => {
     }
     const finalCost = paymethod === "Gratuito" ? 0 : costPerPerson;
 
-    if (
-      typeof passengerLimit !== "number" ||
-      passengerLimit < 1 ||
-      !Number.isInteger(passengerLimit)
-    ) {
-      return res
-        .status(400)
-        .json({ msg: "passengerLimit debe ser un entero ≥ 1." });
-    }
-    if (passengers.length > passengerLimit) {
+    const approvedInitCount = passengers.filter(p => p.status === "Aprobado").length;
+    if (approvedInitCount > passengerLimit) {
       return res.status(400).json({
-        msg: `El viaje permite máximo ${passengerLimit} pasajeros, pero enviaste ${passengers.length}.`
+        msg: `No puedes registrar más de ${passengerLimit} pasajeros aprobados (enviaste ${approvedInitCount}).`
       });
     }
 
@@ -107,7 +99,6 @@ exports.registerTrip = async (req, res) => {
       .json({ msg: "Error interno al registrar el viaje." });
   }
 };
-
 
 exports.getTrips = async (_req, res) => {
   try {
@@ -300,7 +291,6 @@ exports.addPassengerToTrip = async (req, res) => {
       return res.status(404).json({ msg: "Viaje no encontrado." });
     }
 
-    // Verificar si ya existe el pasajero
     const alreadyAdded = trip.passengers.find(p => p.user.toString() === user);
     if (alreadyAdded) {
       return res.status(400).json({ msg: "Este pasajero ya fue agregado." });
@@ -316,13 +306,88 @@ exports.addPassengerToTrip = async (req, res) => {
   }
 };
 
+exports.removeUserFromStop = async (req, res) => {
+  try {
+    const { id, placeId } = req.params;
+    const { user } = req.body;
+
+    if (!user || !mongoose.Types.ObjectId.isValid(user)) {
+      return res.status(400).json({ msg: "ID de usuario inválido." });
+    }
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ msg: "ID de viaje inválido." });
+    }
+
+    const trip = await Trip.findById(id);
+    if (!trip) {
+      return res.status(404).json({ msg: "Viaje no encontrado." });
+    }
+
+    const stop = trip.stops.find(s => s.place.toString() === placeId);
+    if (!stop) {
+      return res.status(404).json({ msg: "Parada no encontrada." });
+    }
+
+    const idx = stop.passengersId.findIndex(u => u.toString() === user);
+    if (idx === -1) {
+      return res.status(400).json({ msg: "El usuario no está en esta parada." });
+    }
+
+    stop.passengersId.splice(idx, 1);
+    await trip.save();
+
+    res.status(200).json({
+      msg: "Usuario eliminado de la parada exitosamente.",
+      data: trip
+    });
+  } catch (error) {
+    console.error("Error al eliminar usuario de la parada:", error);
+    res.status(500).json({ msg: "Error interno al eliminar usuario de la parada." });
+  }
+};
+
+exports.removePassengerFromTrip = async (req, res) => {
+  try {
+    const { id, userId } = req.params;
+
+    if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ msg: "ID de usuario inválido." });
+    }
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ msg: "ID de viaje inválido." });
+    }
+
+    const trip = await Trip.findById(id);
+    if (!trip) {
+      return res.status(404).json({ msg: "Viaje no encontrado." });
+    }
+
+    const idx = trip.passengers.findIndex(p => p.user.toString() === userId);
+    if (idx === -1) {
+      return res.status(404).json({ msg: "Pasajero no encontrado en el viaje." });
+    }
+
+    trip.passengers.splice(idx, 1);
+    await trip.save();
+
+    res.status(200).json({
+      msg: "Pasajero eliminado del viaje exitosamente.",
+      data: trip
+    });
+  } catch (error) {
+    console.error("Error al eliminar pasajero del viaje:", error);
+    res.status(500).json({ msg: "Error interno al eliminar el pasajero del viaje." });
+  }
+};
+
 exports.updatePassengerStatus = async (req, res) => {
   try {
     const { id, userId } = req.params;
     const { status } = req.body;
 
-    if (!["accepted", "denied"].includes(status)) {
-      return res.status(400).json({ msg: "Estado inválido. Debe ser 'accepted' o 'denied'." });
+    const validos = ["Aprobado", "Rechazado", "Pendiente", "Cancelado"];
+    if (!validos.includes(status)) {
+      return res.status(400).json({ msg: "Estado inválido. Debe ser uno válido." });
     }
 
     const trip = await Trip.findById(id);
@@ -335,10 +400,24 @@ exports.updatePassengerStatus = async (req, res) => {
       return res.status(404).json({ msg: "Pasajero no encontrado en el viaje." });
     }
 
+    if (status === "Aprobado") {
+      const aprobados = trip.passengers.filter(p => p.status === "Aprobado").length;
+      const yaAprobado = passenger.status === "Aprobado";
+      const totalTras = yaAprobado ? aprobados : aprobados + 1;
+      if (totalTras > trip.passengerLimit) {
+        return res.status(400).json({
+          msg: `Límite de ${trip.passengerLimit} pasajeros aprobados alcanzado (${aprobados}).`
+        });
+      }
+    }
+
     passenger.status = status;
     await trip.save();
 
-    res.status(200).json({ msg: "Estado del pasajero actualizado exitosamente.", data: trip });
+    res.status(200).json({
+      msg: "Estado del pasajero actualizado exitosamente.",
+      data: trip
+    });
   } catch (error) {
     console.error("Error al actualizar estado del pasajero:", error);
     res.status(500).json({ msg: "Error interno al actualizar el estado del pasajero." });
