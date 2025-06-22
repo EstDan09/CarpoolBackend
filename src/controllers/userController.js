@@ -5,7 +5,7 @@ exports.addCars = async (req, res) => {
     const cars = req.body.cars;
     const email = req.body.email;
     if (!cars || !email) return res.status(400).json({ msg: "Informacion incompleta" });
-    const data = User.findOneAndUpdate(
+    const data = await User.findOneAndUpdate(
       { email: email },
       {
         $push: {
