@@ -18,6 +18,8 @@ module.exports = function (app) {
   app.get("/backend/vehicle/getModel/:id", tripController.getModelVehicle);
   app.delete("/backend/trip/:id/stop/:placeId/remove-user", tripController.removeUserFromStop);
   app.delete("/backend/trip/:id/passenger/:userId", tripController.removePassengerFromTrip);
+  app.post("/backend/trip-bulk", tripController.registerTripsBulk);
+
 };
 
 //GET /backend/trips/user/664abc123456?status=all

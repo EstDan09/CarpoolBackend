@@ -1,5 +1,6 @@
 const Trip = require("../models/Trip");
 const User = require("../models/User");
+
 const mongoose = require("mongoose");
 
 // Retorna el total de viajes con timepo de salida entre startHour y endHour
@@ -705,6 +706,7 @@ exports.topVisitedPlaces = async (req, res) => {
           _id: 0,
           placeId: "$place._id",
           name: "$place.name",
+          description: "$place.description",
           totalVisits: 1
         }
       }
@@ -735,6 +737,7 @@ exports.topUsersWithApprovedTrips = async (req, res) => {
       },
       { $sort: { approvedTripCount: -1 } },
       { $limit: limit },
+
       {
         $lookup: {
           from: "users",
@@ -744,13 +747,28 @@ exports.topUsersWithApprovedTrips = async (req, res) => {
         }
       },
       { $unwind: "$user" },
+
+      {
+        $lookup: {
+          from: "institutions",
+          localField: "user.institutionId",
+          foreignField: "_id",
+          as: "institution"
+        }
+      },
+      { $unwind: { path: "$institution", preserveNullAndEmptyArrays: true } },
+
       {
         $project: {
           _id: 0,
           userId: "$user._id",
-          name: "$user.name",
-          email: "$user.email",
-          approvedTripCount: 1
+          name:   "$user.name",
+          email:  "$user.email",
+          approvedTripCount: 1,
+          institution: {
+            id:   "$institution._id",
+            name: "$institution.name"
+          }
         }
       }
     ]);
@@ -970,21 +988,19 @@ exports.recentRegisteredUsers = async (req, res) => {
 
 exports.topDriversWithMostCancellations = async (req, res) => {
   try {
+    const limit = parseInt(req.query.limit) || 5;
+
     const result = await Trip.aggregate([
       { $unwind: "$passengers" },
-
       { $match: { "passengers.status": "Cancelado" } },
-
       {
         $group: {
           _id: "$driver",
           cancelledCount: { $sum: 1 }
         }
       },
-
       { $sort: { cancelledCount: -1 } },
-
-      { $limit: 5 },
+      { $limit: limit },
 
       {
         $lookup: {
@@ -996,20 +1012,30 @@ exports.topDriversWithMostCancellations = async (req, res) => {
       },
       { $unwind: "$driver" },
 
-      // Proyectar campos útiles
+      {
+        $lookup: {
+          from: "institutions",
+          localField: "driver.institutionId",
+          foreignField: "_id",
+          as: "institution"
+        }
+      },
+      { $unwind: { path: "$institution", preserveNullAndEmptyArrays: true } },
+
       {
         $project: {
-          _id: 0,
-          driverId: "$driver._id",
-          name: "$driver.name",
-          email: "$driver.email",
+          _id:          0,
+          driverId:     "$driver._id",
+          name:         "$driver.name",
+          email:        "$driver.email",
+          institution:  "$institution.name",
           cancelledCount: 1
         }
       }
     ]);
 
     res.status(200).json({
-      msg: "Top conductores con más usuarios cancelados.",
+      msg: `Top ${limit} conductores con más cancelaciones.`,
       data: result
     });
 

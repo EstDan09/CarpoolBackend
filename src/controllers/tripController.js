@@ -1,4 +1,5 @@
 const Trip = require("../models/Trip");
+const Vehicle = require("../models/Vehicle");
 const mongoose = require("mongoose");
 
 exports.registerTrip = async (req, res) => {
@@ -662,6 +663,25 @@ exports.getModelVehicle = async (req, res) => {
     res.status(500).json({ msg: "Error al obtener el vehiculo." });
   }
 
+};
+
+exports.registerTripsBulk = async (req, res) => {
+  try {
+    const { trips } = req.body;
+
+    if (!Array.isArray(trips) || trips.length === 0) {
+      return res.status(400).json({ msg: "Envía un array 'trips' con al menos un viaje." });
+    }
+
+    const created = await Trip.insertMany(trips);
+
+    return res
+      .status(201)
+      .json({ msg: `${created.length} viajes creados exitosamente.`, data: created });
+  } catch (error) {
+    console.error("Error al registrar viajes bulk:", error);
+    return res.status(500).json({ msg: "Error interno al crear viajes bulk." });
+  }
 };
 
 
