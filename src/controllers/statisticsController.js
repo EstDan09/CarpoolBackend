@@ -788,13 +788,9 @@ exports.averageRevenuePerDriver = async (req, res) => {
     const now = new Date();
 
     const result = await Trip.aggregate([
-      // Solo viajes finalizados
       { $match: { arrival: { $lt: now } } },
-
-      // Solo si costPerPerson > 0 (omitimos viajes gratuitos)
       { $match: { costPerPerson: { $gt: 0 } } },
 
-      // Proyectamos solo lo necesario
       {
         $project: {
           driver: 1,
@@ -810,8 +806,6 @@ exports.averageRevenuePerDriver = async (req, res) => {
           }
         }
       },
-
-      // Calculamos total cobrado por viaje
       {
         $project: {
           driver: 1,
@@ -819,11 +813,8 @@ exports.averageRevenuePerDriver = async (req, res) => {
           hasRevenue: { $gt: ["$approvedCount", 0] }
         }
       },
-
-      // Solo viajes con al menos 1 pasajero aprobado
       { $match: { hasRevenue: true } },
 
-      // Agrupamos por conductor
       {
         $group: {
           _id: "$driver",
@@ -832,18 +823,16 @@ exports.averageRevenuePerDriver = async (req, res) => {
         }
       },
 
-      // Calculamos promedio
       {
         $project: {
           _id: 0,
           driverId: "$_id",
           averageRevenue: { $divide: ["$totalRevenue", "$tripCount"] },
-          tripCount: 1,
-          totalRevenue: 1
+          totalRevenue: 1,
+          tripCount: 1
         }
       },
 
-      // Traemos datos del conductor
       {
         $lookup: {
           from: "users",
@@ -853,16 +842,28 @@ exports.averageRevenuePerDriver = async (req, res) => {
         }
       },
       { $unwind: "$driver" },
+
       {
-        $project: {
-          driverId: 1,
-          name: "$driver.name",
-          email: "$driver.email",
-          averageRevenue: { $round: ["$averageRevenue", 2] },
-          totalRevenue: { $round: ["$totalRevenue", 2] },
-          tripCount: 1
+        $lookup: {
+          from: "institutions",
+          localField: "driver.institutionId",
+          foreignField: "_id",
+          as: "institution"
         }
       },
+      { $unwind: { path: "$institution", preserveNullAndEmptyArrays: true } },
+
+      {
+        $project: {
+          driverId:       1,
+          name:           "$driver.name",
+          email:          "$driver.email",
+          institution:    "$institution.name",
+          tripCount:      1,
+          averageRevenue: { $round: ["$averageRevenue", 2] }
+        }
+      },
+
       { $sort: { averageRevenue: -1 } }
     ]);
 
