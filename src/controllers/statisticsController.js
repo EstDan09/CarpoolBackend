@@ -858,7 +858,7 @@ exports.averageRevenuePerDriver = async (req, res) => {
           driverId:       1,
           name:           "$driver.name",
           email:          "$driver.email",
-          institution:    "$institution.name",
+          institution:    "$driver.institutionId",
           tripCount:      1,
           averageRevenue: { $round: ["$averageRevenue", 2] }
         }
@@ -993,13 +993,16 @@ exports.topDriversWithMostCancellations = async (req, res) => {
 
     const result = await Trip.aggregate([
       { $unwind: "$passengers" },
+
       { $match: { "passengers.status": "Cancelado" } },
+
       {
         $group: {
           _id: "$driver",
           cancelledCount: { $sum: 1 }
         }
       },
+
       { $sort: { cancelledCount: -1 } },
       { $limit: limit },
 
@@ -1015,7 +1018,7 @@ exports.topDriversWithMostCancellations = async (req, res) => {
 
       {
         $lookup: {
-          from: "institutions",
+          from: "institutions",              
           localField: "driver.institutionId",
           foreignField: "_id",
           as: "institution"
@@ -1025,21 +1028,20 @@ exports.topDriversWithMostCancellations = async (req, res) => {
 
       {
         $project: {
-          _id:          0,
-          driverId:     "$driver._id",
-          name:         "$driver.name",
-          email:        "$driver.email",
-          institution:  "$institution.name",
+          _id:            0,
+          driverId:       "$driver._id",
+          name:           "$driver.name",
+          email:          "$driver.email",
+          institution:    "$driver.institutionId",
           cancelledCount: 1
         }
       }
     ]);
 
     res.status(200).json({
-      msg: `Top ${limit} conductores con más cancelaciones.`,
-      data: result
+      msg:    `Top ${limit} conductores con más cancelaciones.`,
+      data:   result
     });
-
   } catch (error) {
     console.error("Error al obtener conductores con más cancelaciones:", error);
     res.status(500).json({ msg: "Error interno al obtener estadística." });
